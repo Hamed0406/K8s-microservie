@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql-db
+        image: mysql:latest
+        env:
+        - name: MYSQL_ROOT_PASSWORD # Setting Root Password of mysql From a 'Secret'
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret # Name of the 'Secret'
+              key: password   # 'key' inside the Secret which contains required 'value'
+        - name: MYSQL_USER # Setting USER username on mysql From a 'Secret'
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: username
+        - name: MYSQL_DATABASE # Setting Database Name from a 'ConfigMap'
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: name
+        
+        ports:
+        - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-db
+spec:
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
